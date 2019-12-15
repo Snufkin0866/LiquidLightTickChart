@@ -1,0 +1,53 @@
+<html>
+
+<head>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/core.js"
+        integrity="sha256-wPN6ojtZcdUXfbQ+nxh6Zm7xh1pOWxEbuE9EIa1P7BY=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/sha256.js"
+        integrity="sha256-2AdPI8vSeqbC8jG4va00u9jUnH5H/6DXzQeixNHTx5g=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/hmac.min.js"
+        integrity="sha256-egwF2x9ZneCwHP+C7Ju1K1Nfd2ntIX/X1KY6Dwioki4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/hmac-sha256.min.js"
+        integrity="sha256-1Gusk8p9CX01j8sefIYUiC7gBoAryX7+YUUU3iIOvts=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.2.0/decimal.min.js"
+        integrity="sha256-6dOFvNWbRWo2Kh1ywCc+9VOZghBT/y5RwRLdX8ETXr0=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/components/enc-base64-min.js"></script>
+</head>
+
+<script src="main.js">
+</script>
+
+<body style='margin :0'>
+    <div id='chart'>
+    </div>
+    <div id='tooltip_buy' style='pointer-events: none;position: absolute;z-index: 1000;right:300;color:#FFFFFF;'>
+        <div id='buy_price' style='color:#4BA375;'></div>
+        <div id='buy_vol' style='color:#4BA375;'></div>
+    </div>
+    <div id='tooltip_sell' style='pointer-events: none;position: absolute;z-index: 1000;right:300;color:#FFFFFF;'>
+        <div id='sell_price' style='color:#E54F6B;'></div>
+        <div id='sell_vol' style='color:#E54F6B;'></div>
+    </div>
+    <div id='setting' style='position: absolute;z-index: 1000'>
+        <details style="color:#FFFFFF;background-color:rgba(255,255,255,0.1);padding:5px">
+            <summary>Setting</summary>
+            <form>
+                <input type='text' id='key' style='background-color:transparent;color:#FFFFFF;border:0'
+                    placeholder="API ID"></input>
+                <input type='text' id='secret' style='background-color:transparent;color:#FFFFFF;border:0'
+                    placeholder="SECRET"></input>
+                <input type='button' id='enable_private_ch' value='enable' />
+            </form>
+        </details>
+    </div>
+    <div id='realtime' style='position: absolute;z-index: 1000;right:80;bottom:50%;color:#FFFFFF;cursor : pointer;'>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" width="50" height="50">
+            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"
+                d="M6.5 1.5l5 5.5-5 5.5M3 4l2.5 3L3 10"></path>
+        </svg>
+    </div>
+
+</body>
+
+</html>
