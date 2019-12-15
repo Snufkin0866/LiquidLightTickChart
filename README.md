@@ -2,7 +2,7 @@
 
  Rosさん作成の[TradingView/lightweight-charts](https://github.com/tradingview/lightweight-charts)を使用したbitFlyer FXのTickチャート
 https://ros522.github.io/LightTickChart
-をLiquid用にも作りました。
+をLiquid用にも作りました。高頻度取引、スキャルパー向け。
 
 - →こちらで使用可。
 https://snufkin0866.github.io/LiquidLightTickChart/
