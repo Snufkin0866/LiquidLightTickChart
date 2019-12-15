@@ -4,6 +4,9 @@
 https://ros522.github.io/LightTickChart
 をLiquid用にも作りました。
 
+- ↓こちらで使用可。
+https://snufkin0866.github.io/LiquidLightTickChart/
+
 # Feature
 
  - リアルタイムAPIを使用した描画
