@@ -15,6 +15,8 @@ https://ros522.github.io/LightTickChart
  - LiquidはBoardの最良気配値更新をeventごとに描画すると更新回数が多すぎるため、前回更新から1秒経過しないと更新しないようにしています。
  - LiquidはbitFlyerのtickerに相当するリアルタイムAPIがないため、price_laddersチャンネルを板のベスト値取得に使っていますが、このチャンネルはタイムスタンプを返さないため受信タイムスタンプを使用しています。
  - 左上のSettingでAPI情報をセットするとプライベート約定及び注文の描画ができます。
+ 
+ ![result](https://github.com/Snufkin0866/LiquidLightTickChart/blob/master/index.html-Google-Chrome-2019-12-16-01-44-32.gif)
 
 # その他
  - プルリク歓迎です。
