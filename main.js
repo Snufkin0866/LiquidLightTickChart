@@ -115,6 +115,37 @@ class LiquidHFTChart {
             },
         });
 
+        this.contour_ask_series = new Array(5).fill(0).map((i, idx) => {
+            const alpha = 1.0 - 0.2 * (idx-1)
+            return this.chart.addLineSeries(
+                {
+                    lineWidth: 0.5,
+                    lineStyle: LightweightCharts.LineStyle.Solid,
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                    color: `rgba(75,163,117,${alpha})`,
+                    scaleMargins: {
+                        top: 0,
+                        bottom: 0.8,
+                    },
+                });
+        })
+        this.contour_bid_series = new Array(5).fill(0).map((i, idx) => {
+            const alpha = 1.0 - 0.2 * (idx-1)
+            return this.chart.addLineSeries(
+                {
+                    lineWidth: 0.5,
+                    lineStyle: LightweightCharts.LineStyle.Solid,
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                    color: `rgba(229,79,107,${alpha})`,
+                    scaleMargins: {
+                        top: 0,
+                        bottom: 0.8,
+                    },
+                });
+        })
+
         this.markers = []
         this.orders_line = {}
         // resize to window size
@@ -125,7 +156,7 @@ class LiquidHFTChart {
         document.getElementById('enable_private_ch').onclick = function () {
             const api_key = document.getElementById('key').value
             const secret = document.getElementById('secret').value
-            if (api_key&&secret) self.exchange.enable_private_ch(api_key, secret)
+            if (api_key && secret) self.exchange.enable_private_ch(api_key, secret)
         }
 
         // control realtime button
@@ -192,21 +223,49 @@ class LiquidHFTChart {
             }
         }
 
-        this.exchange.onboard_buy = function(m) {
-            m = JSON.parse(m);
+        this.exchange.onboard_buy = function (m) {
+            const bids = JSON.parse(m);
             const t = Date.now() / 1000
-            if (t - self.exchange.board_buy_updated > 1) {
-                self.bid_series.update({time: t, value: m[0][0]})
+            if (t - self.exchange.board_buy_updated > 0.5) {
+                self.bid_series.update({ time: t, value: bids[0][0] })
                 self.exchange.board_buy_updated = t
+                if (self.exchange.board_buy_ready) {
+                    let vol = 0;
+                    for (let i = 0; i < bids.length; i++) {
+                        const quantity = Number(bids[i][1]);
+                        vol += quantity;
+                        // vol to series index
+                        const series_idx = Math.ceil(vol / 1); // 1line per 1 btc
+                        if (series_idx in self.contour_bid_series) {
+                            self.contour_bid_series[series_idx].update({ time: t, value: Number(bids[i][0]) })
+                        } else {
+                            break
+                        }
+                    }
+                }
             }
         }
 
-        this.exchange.onboard_sell = function(m) {
-            m = JSON.parse(m);
+        this.exchange.onboard_sell = function (m) {
+            const asks = JSON.parse(m);
             const t = Date.now() / 1000
-            if (t - self.exchange.board_sell_updated > 1) {
-                self.ask_series.update({time: t, value: m[0][0]})
+            if (t - self.exchange.board_sell_updated > 0.5) {
+                self.ask_series.update({ time: t, value: asks[0][0] })
                 self.exchange.board_sell_updated = t
+                if (self.exchange.board_sell_ready) {
+                    let vol = 0;
+                    for (let i = 0; i < asks.length; i++) {
+                        const quantity = Number(asks[i][1])
+                        vol += quantity;
+                        // vol to series index
+                        const series_idx = Math.ceil(vol / 1); // 1line per 1 btc
+                        if (series_idx in self.contour_ask_series) {
+                            self.contour_ask_series[series_idx].update({ time: t, value: Number(asks[i][0]) })
+                        } else {
+                            break
+                        }
+                    }
+                }
             }
         }
 
@@ -216,20 +275,20 @@ class LiquidHFTChart {
             m = JSON.parse(m);
             if (m.id in self.orders_line) {
                 // delete cancelled or edited order
-                self.my_exec_series.removePriceLine( self.orders_line[m.id] )
+                self.my_exec_series.removePriceLine(self.orders_line[m.id])
                 delete self.orders_line[m.id]
                 console.log("deleted " + m.side + " Order" + "(" + m.id + ")")
             }
             // add edited or created order
             if (m.side == "buy" && m.status == 'live') {
-                console.log(m.side + " Order" + "(" + m.id + ")" +  "@ " + m.price, "JPY, " + m.quantity + "BTC")
+                console.log(m.side + " Order" + "(" + m.id + ")" + "@ " + m.price, "JPY, " + m.quantity + "BTC")
                 self.orders_line[m.id] = self.my_exec_series.createPriceLine({ color: '#4BA375', price: m.price, outbound_size: new Decimal(m.quantity), lineStyle: LightweightCharts.LineStyle.LargeDashed });
             }
             else if (m.side == "sell" && m.status == 'live') {
                 console.log(m.side + " Order" + "(" + m.id + ")" + "@ " + m.price, "JPY, " + m.quantity + "BTC")
                 self.orders_line[m.id] = self.my_exec_series.createPriceLine({ color: '#E54F6B', price: m.price, outbound_size: new Decimal(m.quantity), lineStyle: LightweightCharts.LineStyle.LargeDashed });
             }
-            
+
         }
 
         this.exchange.onmyexecution = function (m) {
@@ -245,7 +304,7 @@ class LiquidHFTChart {
                 self.markers.push({ time: t, position: 'belowBar', color: '#FF00FF', shape: 'arrowDown', id: m.id })
             }
             self.my_exec_series.setMarkers(self.markers);
-            
+
         }
         this.exchange.run()
     }
@@ -265,19 +324,21 @@ class LiquidExchange {
         this.ontrade = null;
         this.api_key = '';
         this.secret = '';
+        this.board_buy_ready = false
+        this.board_sell_ready = false
     };
 
     get_auth_params(api_key, secret) {
-        
+
         let header = {
             "alg": "HS256",
             "typ": "JWT"
-          };
+        };
         let auth_payload = {
             token_id: Number(api_key),
             path: '/realtime',
             nonce: Date.now()
-            };
+        };
         function base64url(source) {
             let encodedSource = CryptoJS.enc.Base64.stringify(source);
             encodedSource = encodedSource.replace(/=+$/, '');
@@ -292,14 +353,14 @@ class LiquidExchange {
         let signature = encodedHeader + "." + encodedData;
         signature = CryptoJS.HmacSHA256(signature, secret);
         signature = base64url(signature);
-        
-       
+
+
         let auth_request = {
             headers: {
                 'X-Quoine-Auth': encodedHeader + "." + encodedData + "." + signature
-                },
+            },
             path: '/realtime'
-            }
+        }
         return auth_request
     };
 
@@ -311,30 +372,32 @@ class LiquidExchange {
             console.log('Binding callback for public channels')
             self.on_public_message = (message) => {
                 const ws_event = JSON.parse(message.data);
-                switch(ws_event.event){
+                switch (ws_event.event) {
                     case 'pusher:connection_established':
                         console.log('Connected to pusher.');
-                        self.ws.send(JSON.stringify({"event":"pusher:subscribe","data":{"channel": "executions_cash_btcjpy"}}));
-                        self.ws.send(JSON.stringify({"event":"pusher:subscribe","data":{"channel": "price_ladders_cash_btcjpy_buy"}}));
-                        self.ws.send(JSON.stringify({"event":"pusher:subscribe","data":{"channel": "price_ladders_cash_btcjpy_sell"}}));
+                        self.ws.send(JSON.stringify({ "event": "pusher:subscribe", "data": { "channel": "executions_cash_btcjpy" } }));
+                        self.ws.send(JSON.stringify({ "event": "pusher:subscribe", "data": { "channel": "price_ladders_cash_btcjpy_buy" } }));
+                        self.ws.send(JSON.stringify({ "event": "pusher:subscribe", "data": { "channel": "price_ladders_cash_btcjpy_sell" } }));
                         break;
                     case 'pusher_internal:subscription_succeeded':
                         console.log(ws_event.event + ': ' + ws_event.channel);
                         break;
                     case 'updated':
                         //console.log(ws_event.event + ': ' + ws_event.data);
-                        switch(ws_event.channel) {
+                        switch (ws_event.channel) {
                             case 'price_ladders_cash_btcjpy_buy':
                                 if (self.onboard_buy) self.onboard_buy(ws_event.data)
+                                self.board_buy_ready = true
                                 break;
                             case 'price_ladders_cash_btcjpy_sell':
                                 if (self.onboard_sell) self.onboard_sell(ws_event.data)
+                                self.board_sell_ready = true
                                 break;
                         }
                         break;
                     case 'created':
                         //console.log(ws_event.event + ': ' + ws_event.data)
-                        switch(ws_event.channel) {
+                        switch (ws_event.channel) {
                             case 'executions_cash_btcjpy':
                                 if (self.onexecution) self.onexecution(ws_event.data)
                                 break;
@@ -355,16 +418,16 @@ class LiquidExchange {
         let auth_request = this.get_auth_params(key, secret);
         this.on_private_message = (message) => {
             const ws_event = JSON.parse(message.data);
-            switch(ws_event.event){
+            switch (ws_event.event) {
                 case 'pusher:connection_established':
                     console.log('Connected');
-                    self.ws.send(JSON.stringify({ "event":"quoine:auth_request", "data": auth_request }));
+                    self.ws.send(JSON.stringify({ "event": "quoine:auth_request", "data": auth_request }));
                     break;
                 case 'quoine:auth_success':
-                    console.log('Authenticated');                
-                    self.ws.send(JSON.stringify({"event":"pusher:subscribe","data":{"channel": "user_executions_cash_btcjpy"}})); // created
-                    self.ws.send(JSON.stringify({"event":"pusher:subscribe","data":{"channel": "user_account_jpy_orders"}})); // updated
-                    self.ws.send(JSON.stringify({"event":"pusher:subscribe","data":{"channel": "user_account_jpy_trades"}})); // updated
+                    console.log('Authenticated');
+                    self.ws.send(JSON.stringify({ "event": "pusher:subscribe", "data": { "channel": "user_executions_cash_btcjpy" } })); // created
+                    self.ws.send(JSON.stringify({ "event": "pusher:subscribe", "data": { "channel": "user_account_jpy_orders" } })); // updated
+                    self.ws.send(JSON.stringify({ "event": "pusher:subscribe", "data": { "channel": "user_account_jpy_trades" } })); // updated
                     break;
                 case 'quoine:auth_failure':
                     console.log('Auth failed');
@@ -374,8 +437,8 @@ class LiquidExchange {
                     console.log('Subscribed: ' + ws_event.channel);
                     break;
                 case 'updated':
-                    if ( ws_event.channel.includes("user")) {
-                        switch(ws_event.channel) {
+                    if (ws_event.channel.includes("user")) {
+                        switch (ws_event.channel) {
                             case 'user_account_jpy_orders':
                                 if (self.onorder) self.onorder(ws_event.data)
                                 break;
@@ -387,8 +450,8 @@ class LiquidExchange {
                     }
                     break;
                 case 'created':
-                    if ( ws_event.channel.includes("user")) {
-                        switch(ws_event.channel) {
+                    if (ws_event.channel.includes("user")) {
+                        switch (ws_event.channel) {
                             case 'user_executions_cash_btcjpy':
                                 if (self.onmyexecution) self.onmyexecution(ws_event.data)
                                 break;
@@ -396,7 +459,7 @@ class LiquidExchange {
                     }
                     break;
             }
-            
+
         }
         this.ws = new WebSocket('wss://tap.liquid.com/app/LiquidTapClient')
         this.ws.onmessage = (message) => {
