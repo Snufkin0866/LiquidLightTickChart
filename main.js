@@ -116,7 +116,7 @@ class LiquidHFTChart {
         });
 
         this.contour_ask_series = new Array(5).fill(0).map((i, idx) => {
-            const alpha = 1.0 - 0.2 * (idx-1)
+            const alpha = 1.0 - 0.1 * idx
             return this.chart.addLineSeries(
                 {
                     lineWidth: 0.5,
@@ -131,7 +131,7 @@ class LiquidHFTChart {
                 });
         })
         this.contour_bid_series = new Array(5).fill(0).map((i, idx) => {
-            const alpha = 1.0 - 0.2 * (idx-1)
+            const alpha = 1.0 - 0.1 * idx
             return this.chart.addLineSeries(
                 {
                     lineWidth: 0.5,
@@ -235,13 +235,12 @@ class LiquidHFTChart {
                         const quantity = Number(bids[i][1]);
                         vol += quantity;
                         // vol to series index
-                        const series_idx = Math.ceil(vol / 1); // 1line per 1 btc
+                        const series_idx = Math.ceil(vol / 0.25); // 1line per 0.25 btc
                         if (series_idx in self.contour_bid_series) {
                             self.contour_bid_series[series_idx].update({ time: t, value: Number(bids[i][0]) })
-                        } else {
-                            break
                         }
                     }
+                    console.log('Total size buy: ' + vol + 'BTC')
                 }
             }
         }
@@ -258,13 +257,12 @@ class LiquidHFTChart {
                         const quantity = Number(asks[i][1])
                         vol += quantity;
                         // vol to series index
-                        const series_idx = Math.ceil(vol / 1); // 1line per 1 btc
+                        const series_idx = Math.ceil(vol / 0.25); // 1line per 0.25 btc
                         if (series_idx in self.contour_ask_series) {
                             self.contour_ask_series[series_idx].update({ time: t, value: Number(asks[i][0]) })
-                        } else {
-                            break
                         }
                     }
+                    console.log('Total size sell: ' + vol + 'BTC')
                 }
             }
         }
