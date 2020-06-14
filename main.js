@@ -202,7 +202,7 @@ class LiquidHFTChart {
         })
 
         // subscribe visible time range change
-        self.chart.subscribeVisibleTimeRangeChange(function () {
+        self.chart.timeScale().subscribeVisibleTimeRangeChange(function () {
             var buttonVisible = self.chart.timeScale().scrollPosition() < 0;
             document.getElementById('realtime').style.display = buttonVisible ? 'block' : 'none';
         });
